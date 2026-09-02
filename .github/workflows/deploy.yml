@@ -1,0 +1,76 @@
+# Builds the prerendered static site and ships it to owen-main.
+#
+# `bun run build` runs vite build (nitro node-server preset) then
+# scripts/prerender.mjs, which boots that server and snapshots every route into
+# dist/. Deploy is a directory copy plus a symlink flip -- nothing is restarted.
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOMAIN: torvexgaragedoorrepair.site
+  BUILD_DIR: dist
+  DEPLOY_HOST: 194.140.199.220
+  DEPLOY_USER: garagedeploy
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with: { bun-version: latest }
+
+      - run: bun install --frozen-lockfile
+
+      # Needs node as well as bun: scripts/prerender.mjs boots the nitro server
+      # with process.execPath, and the build output targets the node runtime.
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+
+      - run: bun run build
+
+      - name: Verify the prerender produced a real site
+        run: |
+          test -f "$BUILD_DIR/index.html" || { echo "no index.html in $BUILD_DIR"; exit 1; }
+          pages=$(find "$BUILD_DIR" -name '*.html' | wc -l)
+          echo "$pages HTML pages in $BUILD_DIR"
+          [ "$pages" -ge 4 ] || { echo "only $pages pages -- refusing to deploy a partial build"; exit 1; }
+
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          echo "${{ secrets.GARAGE_DEPLOY_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          echo "${{ secrets.GARAGE_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
+      - name: Deploy
+        run: |
+          set -euo pipefail
+          release="$(date -u +%Y%m%d-%H%M%S)-${GITHUB_SHA::7}"
+          root="/srv/garage/$DOMAIN"
+          target="$DEPLOY_USER@$DEPLOY_HOST"
+
+          rsync -az --delete "$BUILD_DIR/" "$target:$root/releases/$release/"
+
+          # Flip atomically so a request never sees a half-written tree.
+          ssh "$target" "
+            set -euo pipefail
+            ln -sfn 'releases/$release' '$root/current.tmp'
+            mv -T '$root/current.tmp' '$root/current'
+            ls -1dt '$root/releases/'*/ | tail -n +6 | xargs -r rm -rf
+            echo \"live: \$(readlink '$root/current')\"
+          "
+
+      - name: Clean up key
+        if: always()
+        run: rm -f ~/.ssh/id_ed25519
