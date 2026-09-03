@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { fullAddress, site } from "@/lib/site";
+import hero from "@/assets/hero-garage.jpg";
 
 const title = "Privacy Policy | Torvex Garage Door Repair";
 const description =
@@ -13,9 +14,14 @@ export const Route = createFileRoute("/privacy-policy")({
       { property: "og:title", content: title },
       { property: "og:description", content: description },
       { property: "og:type", content: "website" },
-      { property: "og:url", content: "/privacy-policy" },
+      { property: "og:url", content: `${site.url}/privacy-policy` },
+      { property: "og:image", content: `${site.url}${hero}` },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: title },
+      { name: "twitter:description", content: description },
+      { name: "twitter:image", content: `${site.url}${hero}` },
     ],
-    links: [{ rel: "canonical", href: "/privacy-policy" }],
+    links: [{ rel: "canonical", href: `${site.url}/privacy-policy` }],
   }),
   component: PrivacyPage,
 });

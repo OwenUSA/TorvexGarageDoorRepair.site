@@ -35,9 +35,14 @@ export const Route = createFileRoute("/about")({
       { property: "og:title", content: title },
       { property: "og:description", content: description },
       { property: "og:type", content: "website" },
-      { property: "og:url", content: "/about" },
+      { property: "og:url", content: `${site.url}/about` },
+      { property: "og:image", content: `${site.url}${teamVan}` },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: title },
+      { name: "twitter:description", content: description },
+      { name: "twitter:image", content: `${site.url}${teamVan}` },
     ],
-    links: [{ rel: "canonical", href: "/about" }],
+    links: [{ rel: "canonical", href: `${site.url}/about` }],
     scripts: [
       {
         type: "application/ld+json",
@@ -51,6 +56,7 @@ export const Route = createFileRoute("/about")({
             name: site.name,
             telephone: site.phone,
             url: site.url,
+            image: `${site.url}${teamVan}`,
             address: {
               "@type": "PostalAddress",
               streetAddress: site.address.street,

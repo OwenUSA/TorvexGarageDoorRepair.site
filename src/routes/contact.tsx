@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { Clock, Mail, MapPin, Phone } from "lucide-react";
 import { fullAddress, mapEmbedSrc, services, site } from "@/lib/site";
+import teamVan from "@/assets/team-van.jpg";
 
 const title = "Contact Torvex Garage Door Repair | Phoenix, AZ";
 const description =
@@ -15,9 +16,14 @@ export const Route = createFileRoute("/contact")({
       { property: "og:title", content: title },
       { property: "og:description", content: description },
       { property: "og:type", content: "website" },
-      { property: "og:url", content: "/contact" },
+      { property: "og:url", content: `${site.url}/contact` },
+      { property: "og:image", content: `${site.url}${teamVan}` },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: title },
+      { name: "twitter:description", content: description },
+      { name: "twitter:image", content: `${site.url}${teamVan}` },
     ],
-    links: [{ rel: "canonical", href: "/contact" }],
+    links: [{ rel: "canonical", href: `${site.url}/contact` }],
     scripts: [
       {
         type: "application/ld+json",
@@ -32,6 +38,7 @@ export const Route = createFileRoute("/contact")({
             telephone: site.phone,
             email: site.email,
             url: `${site.url}/contact`,
+            image: `${site.url}${teamVan}`,
             address: {
               "@type": "PostalAddress",
               streetAddress: site.address.street,
